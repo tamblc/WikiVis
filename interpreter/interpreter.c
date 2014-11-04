@@ -8,6 +8,7 @@ void writedata(FILE *readf, int numtoread);
 #define READSIZE 1000
 #define	WRITESIZE 300
 #define PL_TITLE_MAX 255
+#define SEPERATOR 10000
 #define DEBUG
 
 int main(int argc, char ** argv){
@@ -32,6 +33,7 @@ int main(int argc, char ** argv){
 
 void writedata(FILE *readf, int numtoread){
 	char readbuf[READSIZE], writebuf[WRITESIZE], *itr, *placeholder;
+	char filename[10];
 	FILE * currentwritefile = NULL;
 	int curcat = 0;
 	int i,pl_from,pl_namespace,scratch;
@@ -42,7 +44,8 @@ void writedata(FILE *readf, int numtoread){
 	while(readbuf[0] != 'I'){
 		fgets(readbuf,READSIZE,readf);
 	}
-	currentwritefile = fopen("0.txt","w");
+	sprintf(filename,"%d.txt",curcat);
+	currentwritefile = fopen(filename,"w");
 	/*while(1){
 		printf(readbuf);
 		fgets(readbuf,READSIZE,readf);
@@ -155,7 +158,19 @@ void writedata(FILE *readf, int numtoread){
 					itr = readbuf;
 				}
 			}
+			
+			if(!pl_from){
+				printf("error: %d %s\n", pl_namespace, placeholder);
+				continue;
+			}
+			if(curcat != (pl_from/SEPERATOR)){
+				curcat = pl_from/SEPERATOR;
+				close(currentwritefile);
+				sprintf(filename,"%d.txt",curcat);
+				currentwritefile = fopen(filename,"w");
+			}
 			fwrite(writebuf, sizeof(char), strlen(writebuf), currentwritefile);
 		}
 	}
+	close(currentwritefile);
 }
