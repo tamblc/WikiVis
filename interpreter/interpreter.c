@@ -11,10 +11,9 @@ void writedata(FILE *readf, int numtoread);
 #define DEBUG
 
 int main(int argc, char ** argv){
-	FILE *readf, *writef;
-	char data;
+	FILE *readf;
 	int numtoread;
-	if(argc < 2){
+	if(argc != 3){
 		printf("error: need 2 arguments. Name of source file,num of lines to read\n");
 		exit(EXIT_FAILURE);
 	}
@@ -24,6 +23,8 @@ int main(int argc, char ** argv){
 		exit(EXIT_FAILURE);
 	}
 
+	numtoread = atoi(argv[2]);
+	
 	writedata(readf,numtoread);
 	fclose(readf);
 	exit(EXIT_SUCCESS);
@@ -51,84 +52,110 @@ void writedata(FILE *readf, int numtoread){
 	}*/
 	for(i = 0; i < numtoread; ++i){
 		itr = NULL;
+		placeholder = NULL;
 		sentenial = 0;
 		while(!sentenial){
 			if(!itr){//start of our line
-				itr = strtok(readbuf,"(");
-				printf("on line %d",i);
-#ifdef DEBUG
-			printf("%s\n",itr);
-#endif			
-			}else{//we have already advanced to the next element
-				itr = strtok(NULL,"(");
-				//means the previous operation itr = strtok(NULL,"\'");
-				//reached the eob. so pl_title was cut off
-				if(!itr){
-					strcpy(pl_title_partial,placeholder);
+				itr = strpbrk(readbuf,"(");
+				*itr = '\0';
+				++itr;
+			}else{
+				placeholder = itr;
+				itr = strpbrk(itr,"(");
+				if(!itr){//could not find (
 					fgets(readbuf,READSIZE,readf);
-					if(readbuf[0] != '\''){
-						itr = strtok(readbuf,"\'");
-						placeholder = readbuf;
-						sprintf(writebuf,"%d,%d,%s%s\n",pl_from,pl_namespace,pl_title_partial,placeholder);
-						fwrite(writebuf, sizeof(char), strlen(writebuf), currentwritefile);
-						itr = strtok(NULL,"(");
-					}else{//inclase the buffer stopped right before the '
-						itr = strtok(readbuf+1,"\'");
+					if(readbuf[0] == 'I'){
+						sentenial = 1;
+						break;
 					}
-				}else{//write the data we have
-					sprintf(writebuf,"%d,%d,%s\n",pl_from,pl_namespace,placeholder);
-					fwrite(writebuf, sizeof(char), strlen(writebuf), currentwritefile);
+					itr = strpbrk(readbuf,"(");
+				}
+				*itr = '\0';
+				++itr;
+				if(!itr){//meant that delimiter was last char in buffer
+					fgets(readbuf,READSIZE,readf);
+					itr = readbuf;
 				}
 			}
 			
-			itr = strtok(NULL,",");
-			//previous strtok(NULL,"(") reached eob
-			if(!itr){
-				fgets(readbuf,READSIZE,readf);
-				if(readbuf[0] == 'I'){
-					sentenial = 1;
-					return;
-				}
-				if(readbuf[0] != '('){
-					itr = strtok(readbuf,"(");
-					itr = strtok(NULL,",");
-				}else{//incase the buffer stopped right before the (
-					itr = strtok(readbuf+1,",");
-				}
-			}
-			pl_from = atoi(itr);
-			
-			itr = strtok(NULL,",");
-			//previous strtok(NULL,",") reached eob. So pl_from was cutoff
-			if(!itr){
-				fgets(readbuf,READSIZE,readf);
-				//printf("%s\n",readbuf);
-				if(readbuf[0] != ','){
-					itr = strtok(readbuf,",");
-					scratch = atoi(readbuf);
-					pl_from = pl_from*pow(10.0,(float)strlen(readbuf)) + scratch;
-					itr = strtok(NULL,",");
-					//printf("got here %d\n",pl_from);
-				}else{//incase the buffer had stopped right before the ,
-					itr = strtok(readbuf+1,",");
-				}
-			}
-			pl_namespace = atoi(itr);
-			
-			itr = strtok(NULL,"\'");
-			//previous strtok(NULL,",") reached eob our pl_name_space was cutoff
-			if(!itr){
-				fgets(readbuf,READSIZE,readf);
-				if(readbuf[0] != ','){
-					itr = strtok(readbuf,",");
-					scratch = atoi(readbuf);
-					pl_namespace = pl_namespace*pow(10.0,(float)strlen(readbuf)) + scratch;
-					itr = strtok(NULL,"\'");
-				}else{//incase the buffer had stopped right before the '
-					itr = strtok(readbuf+1,"\'");
-				}
-			}		
 			placeholder = itr;
+			itr = strpbrk(itr,",");
+			if(!itr){//could not find delimiting , will load next
+				//meant that pl_from is partially written
+				pl_from = atoi(placeholder);
+				fgets(readbuf,READSIZE,readf);
+				itr = strpbrk(readbuf,",");
+				*itr = '\0';
+				++itr;
+				scratch = atoi(readbuf);
+				pl_from = pl_from*pow(10.0,(float)strlen(readbuf)) + scratch;
+			}else{
+				*itr = '\0';
+				++itr;
+				pl_from = atoi(placeholder);
+				if(!itr){//meant that delimiter was last char in buffer
+					fgets(readbuf,READSIZE,readf);
+					itr = readbuf;
+				}
+			}
+			
+			placeholder = itr;
+			itr = strpbrk(itr,",");
+			if(!itr){//could not find delimiting , will load next
+				//meant that pl_namespace is partially written
+				pl_namespace  = atoi(placeholder);
+				fgets(readbuf,READSIZE,readf);
+				itr = strpbrk(readbuf,",");
+				*itr = '\0';
+				++itr;
+				scratch = atoi(readbuf);
+				pl_namespace  = pl_namespace *pow(10.0,(float)strlen(readbuf)) + scratch;
+			}else{
+				*itr = '\0';
+				++itr;
+				pl_namespace = atoi(placeholder);
+				if(!itr){//meant that delimiter was last char in buffer
+					fgets(readbuf,READSIZE,readf);
+					itr = readbuf;
+				}
+			}
+			
+			placeholder = itr;		//find first '
+			itr = strpbrk(itr,"\'");
+			if(!itr){//pl_title starts from the next buffer
+				fgets(readbuf,READSIZE,readf);
+				itr = readbuf;
+			}
+			*itr = '\0';
+			++itr;
+			if(!itr){//meant that delimiter was last char in buffer
+				fgets(readbuf,READSIZE,readf);
+				itr = readbuf;
+			}
+			
+			placeholder = itr;	   //find next '
+			itr = strpbrk(itr,"\'");
+			if(!itr){//pl_title is cutoff
+				strcpy(pl_title_partial,placeholder);
+				fgets(readbuf,READSIZE,readf);
+				itr = strpbrk(readbuf,"\'");
+				*itr = '\0';
+				++itr;
+				sprintf(writebuf,"%d,%d,%s%s\n",pl_from,pl_namespace,pl_title_partial,readbuf);
+			}else{
+				/*if(*(itr-1) == '\\'){
+					++itr;
+					itr = strpbrk(itr,"\'");
+				}*/
+				*itr = '\0';
+				++itr;
+				sprintf(writebuf,"%d,%d,%s\n",pl_from,pl_namespace,placeholder);
+				if(!itr){//meant that delimiter was last char in buffer
+					fgets(readbuf,READSIZE,readf);
+					itr = readbuf;
+				}
+			}
+			fwrite(writebuf, sizeof(char), strlen(writebuf), currentwritefile);
 		}
 	}
 }
