@@ -37,7 +37,7 @@ void writedata(FILE *readf, int numtoread){
 	FILE * currentwritefile = NULL;
 	int curcat = 0;
 	int i,pl_from,pl_namespace,scratch;
-	char sentenial = 0, pl_title_partial[PL_TITLE_MAX];
+	char sentenial = 0,written = 0,prevchar = 0;
 
 	fgets(readbuf,READSIZE,readf);
 	//ignore the first couple of lines that appear in the files
@@ -138,24 +138,28 @@ void writedata(FILE *readf, int numtoread){
 			
 			placeholder = itr;	   //find next '
 			itr = strpbrk(itr,"\'");
-			if(!itr){//pl_title is cutoff
-				strcpy(pl_title_partial,placeholder);
-				fgets(readbuf,READSIZE,readf);
-				itr = strpbrk(readbuf,"\'");
-				*itr = '\0';
-				++itr;
-				sprintf(writebuf,"%d,%d,%s%s\n",pl_from,pl_namespace,pl_title_partial,readbuf);
-			}else{
-				/*if(*(itr-1) == '\\'){
+			sprintf(writebuf,"%d,%d",pl_from,pl_namespace);
+			written = 0;
+			while(!written){
+				if(!itr){//pl_title is cutoff
+					prevchar = readbuf[READSIZE - 1]; //get last char in buffer
+					strcat(writebuf,placeholder);
+					fgets(readbuf,READSIZE,readf);
+					placeholder = readbuf;
+					itr = strpbrk(readbuf,"\'");
+				}
+				if(itr != readbuf){
+					prevchar = *(itr-1);
+				}
+				if(prevchar == '\\'){
 					++itr;
 					itr = strpbrk(itr,"\'");
-				}*/
-				*itr = '\0';
-				++itr;
-				sprintf(writebuf,"%d,%d,%s\n",pl_from,pl_namespace,placeholder);
-				if(!itr){//meant that delimiter was last char in buffer
-					fgets(readbuf,READSIZE,readf);
-					itr = readbuf;
+				}else{
+					*itr = '\0';
+					++itr;
+					strcat(writebuf,placeholder);
+					strcat(writebuf,"\n");//add a newline to say next element
+					written = 1;
 				}
 			}
 			
