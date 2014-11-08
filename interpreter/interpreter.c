@@ -160,6 +160,10 @@ void writedata(FILE *readf, int numtoread){
 					strcat(writebuf,placeholder);
 					strcat(writebuf,"\n");//add a newline to say next element
 					written = 1;
+					if(!itr){//meant that delimiter was last char in buffer
+						fgets(readbuf,READSIZE,readf);
+						itr = readbuf;
+					}
 				}
 			}
 			
