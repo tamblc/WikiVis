@@ -6,7 +6,7 @@
 void writedata(FILE *readf, int numtoread);
 
 #define READSIZE 1000
-#define	WRITESIZE 300
+#define	WRITESIZE 500
 #define PL_TITLE_MAX 255
 #define SEPERATOR 10000
 #define DEBUG
@@ -35,7 +35,7 @@ void writedata(FILE *readf, int numtoread){
 	char readbuf[READSIZE], writebuf[WRITESIZE], *itr, *placeholder;
 	char filename[10];
 	FILE * currentwritefile = NULL;
-	int curcat = 0;
+	int curcat = 0,curfile = 0;
 	int i,pl_from,pl_namespace,scratch;
 	char sentenial = 0,written = 0,prevchar = 0;
 
@@ -138,7 +138,18 @@ void writedata(FILE *readf, int numtoread){
 			
 			placeholder = itr;	   //find next '
 			itr = strpbrk(itr,"\'");
-			sprintf(writebuf,"%d,%d",pl_from,pl_namespace);
+			
+			*writebuf = '\0'; //clear writebuf
+			if(pl_from != curfile && pl_from != 0){
+				if(curfile){
+					fwrite("\n]}\n",sizeof(char),4,currentwritefile);
+				}
+				sprintf(writebuf,"{\"%d\":[\n",pl_from);			
+				curfile = pl_from;
+			}else if(pl_from != 0){
+				sprintf(writebuf,",\n");
+			}
+			strcat(writebuf,"	{\"link\":\"");
 			written = 0;
 			while(!written){
 				if(!itr){//pl_title is cutoff
@@ -158,7 +169,7 @@ void writedata(FILE *readf, int numtoread){
 					*itr = '\0';
 					++itr;
 					strcat(writebuf,placeholder);
-					strcat(writebuf,"\n");//add a newline to say next element
+					//strcat(writebuf,"\n");//add a newline to say next element
 					written = 1;
 					if(!itr){//meant that delimiter was last char in buffer
 						fgets(readbuf,READSIZE,readf);
@@ -166,6 +177,7 @@ void writedata(FILE *readf, int numtoread){
 					}
 				}
 			}
+			strcat(writebuf,"\"}");
 			
 			if(!pl_from){
 				printf("error: %d %s\n", pl_namespace, placeholder);
@@ -180,5 +192,6 @@ void writedata(FILE *readf, int numtoread){
 			fwrite(writebuf, sizeof(char), strlen(writebuf), currentwritefile);
 		}
 	}
+	fwrite("\n]}\n",sizeof(char),4,currentwritefile);
 	close(currentwritefile);
 }
