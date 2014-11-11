@@ -2,6 +2,7 @@
   <head>
     <style>
 
+
 .node {
   opacity: 0.5;
 }
@@ -17,6 +18,7 @@
 
     </style>
     <script src="http://d3js.org/d3.v3.min.js"></script>
+    <script src="MediawikiJS.js"></script>
   </head>
   <body>
     <div id="viz"></div>
@@ -85,10 +87,23 @@ force.on('tick', function() {
         .attr('d', function(d) { return 'M'+d.join(',')+'Z'; });
 });
 
-d3.json('miserables.json', function(err, data) {
+d3.json('sample.json', function(err, data) {
 
-    data.nodes.forEach(function(d, i) {
-        d.id = i;
+    // Loop through id's 
+    for (var p_id in ) {
+
+    }
+    // Translate id to page title
+    var mwjs = MediaWikiJS('https://en.wikipedia.org');
+mwjs.send({action: 'query', prop: 'info', pageid: p_id}, function (data) {
+    var pages = data.query.pages;
+    alert('Last edited by: ' + pages[Object.keys(pages)[0]].revisions[0].user);
+});
+    // create new node
+
+    // Add links to Node
+
+    // Figure out value
     });
 
     link = svg.selectAll('.link')
