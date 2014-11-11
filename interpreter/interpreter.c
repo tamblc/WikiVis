@@ -2,8 +2,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <limits.h>
 
 void writedata(FILE *readf, int numtoread);
+void movetocurpos(FILE *readf, FILE *config);
 
 #define READSIZE 1000
 #define	WRITESIZE 500
@@ -12,7 +14,7 @@ void writedata(FILE *readf, int numtoread);
 #define DEBUG
 
 int main(int argc, char ** argv){
-	FILE *readf;
+	FILE *readf, *config;
 	int numtoread;
 	if(argc != 3){
 		printf("error: need 2 arguments. Name of source file,num of lines to read\n");
@@ -23,7 +25,12 @@ int main(int argc, char ** argv){
 		printf("error: source file does not exist\n");
 		exit(EXIT_FAILURE);
 	}
-
+	config = fopen(".linksconfig.txt","r");
+	if(config){
+		printf("%s\n","starting from new position");
+		movetocurpos(readf, config);
+		fclose(config);
+	}
 	numtoread = atoi(argv[2]);
 	
 	writedata(readf,numtoread);
@@ -31,10 +38,18 @@ int main(int argc, char ** argv){
 	exit(EXIT_SUCCESS);
 }
 
+void movetocurpos(FILE *readf, FILE *config){
+	char readbuf[READSIZE];
+	off_t offset;
+	fgets(readbuf,READSIZE,config);
+	offset = atoll(readbuf);
+	fseek(readf,offset,SEEK_SET);
+}
+
 void writedata(FILE *readf, int numtoread){
 	char readbuf[READSIZE], writebuf[WRITESIZE], *itr, *placeholder;
-	char filename[10];
-	FILE * currentwritefile = NULL;
+	char filename[20];
+	FILE * currentwritefile = NULL, *configfile;
 	int curcat = 0,curfile = 0;
 	int i,pl_from,pl_namespace,scratch;
 	char sentenial = 0,written = 0,prevchar = 0;
@@ -44,8 +59,8 @@ void writedata(FILE *readf, int numtoread){
 	while(readbuf[0] != 'I'){
 		fgets(readbuf,READSIZE,readf);
 	}
-	sprintf(filename,"%d.txt",curcat);
-	currentwritefile = fopen(filename,"w");
+	sprintf(filename,"link%d.txt",curcat);
+	currentwritefile = fopen(filename,"a");
 	/*while(1){
 		printf(readbuf);
 		fgets(readbuf,READSIZE,readf);
@@ -186,12 +201,16 @@ void writedata(FILE *readf, int numtoread){
 			if(curcat != (pl_from/SEPERATOR)){
 				curcat = pl_from/SEPERATOR;
 				close(currentwritefile);
-				sprintf(filename,"%d.txt",curcat);
-				currentwritefile = fopen(filename,"w");
+				sprintf(filename,"link%d.txt",curcat);
+				currentwritefile = fopen(filename,"a");
 			}
 			fwrite(writebuf, sizeof(char), strlen(writebuf), currentwritefile);
 		}
 	}
 	fwrite("\n]}\n",sizeof(char),4,currentwritefile);
 	close(currentwritefile);
+	configfile = fopen(".linksconfig.txt","w");
+	sprintf(writebuf,"%lld",ftell(readf));
+	fwrite(writebuf,sizeof(char),strlen(writebuf),configfile);
+	close(configfile);
 }
