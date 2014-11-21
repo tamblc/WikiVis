@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <style>
+
+.node {
+  stroke: #fff;
+  stroke-width: 1.5px;
+}
+
+.link {
+  stroke: #999;
+  stroke-opacity: .6;
+}
+
+body {
+  background-color: #79AFD2 !important;
+}
+form {
+  margin-bottom: 50px !important;
+}
+
+svg {
+  background-color: #fff !important;
+}
+</style>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Visualizing Wikipedia</title>
+    <link href='http://fonts.googleapis.com/css?family=Arvo:400,700,400italic,700italic|Raleway:400,200,700' rel='stylesheet' type='text/css'>
+    <!-- Bootstrap -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="text-center col-sm-offset-3 col-sm-6"><h1> Wikipedia: Visualized</h1> <h3> Finding Paths from Everything to Philosophy </div>
+    <form class="col-sm-12" action="" method="POST" role="form">
+      <legend>Where Shall We Go?</legend>
+    
+      <div class="form-group col-sm-6">
+        <label for="">Start Node:</label>
+        <input type="text" class="form-control" id="" placeholder="Input field">
+      </div>
+        <div class="form-group col-sm-6">
+        <label for="">End Node:</label>
+        <input type="text" class="form-control" id="" placeholder="Input field">
+      </div>
+    
+      
+    
+      <button type="submit" class="btn btn-primary">Submit</button>
+    </form>
+
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+
+    <script>
+
+var width = 960,
+    height = 500;
+
+var color = d3.scale.category20();
+
+var force = d3.layout.force()
+    .charge(-120)
+    .linkDistance(30)
+    .size([width, height]);
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height)
+    .attr("class", "col-sm-offset-2 col-sm-8");
+
+d3.json("miserables.json", function(error, graph) {
+  force
+      .nodes(graph.nodes)
+      .links(graph.links)
+      .start();
+
+  var link = svg.selectAll(".link")
+      .data(graph.links)
+    .enter().append("line")
+      .attr("class", "link")
+      .style("stroke-width", function(d) { return Math.sqrt(d.value); });
+
+  var node = svg.selectAll(".node")
+      .data(graph.nodes)
+    .enter().append("circle")
+      .attr("class", "node")
+      .attr("r", 5)
+      .style("fill", function(d) { return color(d.group); })
+      .call(force.drag);
+
+  node.append("title")
+      .text(function(d) { return d.name; });
+
+  node.on("click", function() {
+    for(var i = 0; i < node.length; i++){
+      var cb = function(i){
+        alert(this);
+      };
+      cb.call(node[i], i);
+    }
+  });
+
+  force.on("tick", function() {
+    link.attr("x1", function(d) { return d.source.x; })
+        .attr("y1", function(d) { return d.source.y; })
+        .attr("x2", function(d) { return d.target.x; })
+        .attr("y2", function(d) { return d.target.y; });
+
+    node.attr("cx", function(d) { return d.x; })
+        .attr("cy", function(d) { return d.y; });
+  
+  });
+});
+
+</script>
+
+
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    <script src="js/bootstrap.min.js"></script>
+  </body>
+</html>

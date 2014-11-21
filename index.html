@@ -89,21 +89,32 @@ force.on('tick', function() {
 
 d3.json('sample.json', function(err, data) {
 
-    // Loop through id's 
-    for (var p_id in ) {
+    // Loop through id's: how does d3.json access data i.e. where is the return value?
 
-    }
+
+
+   
     // Translate id to page title
-    var mwjs = MediaWikiJS('https://en.wikipedia.org');
-mwjs.send({action: 'query', prop: 'info', pageid: p_id}, function (data) {
-    var pages = data.query.pages;
-    alert('Last edited by: ' + pages[Object.keys(pages)[0]].revisions[0].user);
-});
+
+    // var mwjs = MediaWikiJS('https://en.wikipedia.org');
+    // mwjs.send({action: 'query', prop: 'info', pageid: p_id}, function (data) {
+    // var pages = data.query.pages;
+    // alert('Last edited by: ' + pages[Object.keys(pages)[0]].revisions[0].user);
+    // });
+    // ^^ Gets the data from the API, needs to be formatted to match the data here
+
     // create new node
+
+
 
     // Add links to Node
 
-    // Figure out value
+
+
+    // Figure out value.. (might not be necessary)
+
+
+
     });
 
     link = svg.selectAll('.link')
