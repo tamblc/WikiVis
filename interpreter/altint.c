@@ -6,7 +6,8 @@
 
 void writedata(FILE *readf, int numtoread);
 void movetocurpos(FILE *readf, FILE *config);
-void debugfun(FILE *readf); 
+void debugfun(FILE *readf);
+void getfirsti(FILE *readf);
 
 #define _FILE_OFFSET_BITS 64
 #define READSIZE 1000
@@ -41,6 +42,8 @@ int main(int argc, char ** argv){
       movetocurpos(readf, config);
     }
     fclose(config);
+  }else{
+    getfirsti(readf);
   }
   numtoread = atoi(argv[2]);
 	
@@ -55,6 +58,20 @@ void movetocurpos(FILE *readf, FILE *config){
   fgets(readbuf,READSIZE,config);
   offset = atoll(readbuf);
   fseeko(readf,offset,SEEK_SET);
+}
+
+void getfirsti(FILE *readf){
+  off_t tellnum;
+  char readbuf[READSIZE];
+
+  tellnum = ftello(readf);  
+  fgets(readbuf,READSIZE,readf);
+  //ignore the first couple of lines that appear in the files
+  while(readbuf[0] != 'I'){
+    tellnum = ftello(readf);
+    fgets(readbuf,READSIZE,readf);
+  }
+  fseeko(readf,tellnum,SEEK_SET);
 }
 
 void debugfun(FILE *readf){
@@ -77,11 +94,6 @@ void writedata(FILE *readf, int numtoread){
   char sentenial = 0,written = 0,prevchar = 0;
   off_t tellnum;
 
-  fgets(readbuf,READSIZE,readf);
-  //ignore the first couple of lines that appear in the files
-  while(readbuf[0] != 'I'){
-    fgets(readbuf,READSIZE,readf);
-  }
   sprintf(filename,"link%d.txt",curcat);
   currentwritefile = fopen(filename,"a");
 
@@ -192,7 +204,7 @@ void writedata(FILE *readf, int numtoread){
       written = 0;
       while(!written){
 	if(!itr){//pl_title is cutoff
-	  prevchar = readbuf[READSIZE - 1]; //get last char in buffer
+	  prevchar = placeholder[strlen(placeholder) - 1]; //get last char in buffer
 	  strcat(writebuf,placeholder);
 	  fgets(readbuf,READSIZE,readf);
 	  placeholder = readbuf;
