@@ -199,10 +199,12 @@ void writedata(FILE *readf, int numtoread){
 	/*if(curfile){
 	  fwrite("\n]}\n",sizeof(char),4,currentwritefile);
 	  }*/
-	sprintf(writebuf,"{\"%d\":[\n",pl_from);			
+	//sprintf(writebuf,"{\"%d\":[\n",pl_from);			
+	sprintf(writebuf,"%d,",pl_from);
 	curfile = pl_from;
       }else if(pl_from != 0){
-	sprintf(writebuf,",\n");
+	//sprintf(writebuf,",\n");
+	sprintf(writebuf,"%d,",pl_from);
       }
       //strcat(writebuf,"	{\"link\":\"");
 			
@@ -248,6 +250,7 @@ void writedata(FILE *readf, int numtoread){
 	currentwritefile = fopen(filename,"a");
       }
       fwrite(writebuf, sizeof(char), strlen(writebuf), currentwritefile);
+      fwrite("\n",sizeof(char),1,currentwritefile);
     }
   }
   //fwrite("\n]}\n",sizeof(char),4,currentwritefile);
