@@ -39,7 +39,7 @@ int main(int argc, char ** argv){
     movetocurpos(readf, config);
     if(debug){
       debugfun(readf);
-      movetocurpos(readf, config);
+      return;
     }
     fclose(config);
   }else{
@@ -62,9 +62,11 @@ void movetocurpos(FILE *readf, FILE *config){
 
 void debugfun(FILE *readf){
   char readbuf[READSIZE];
+  int line;
   while(1){
     fgets(readbuf,READSIZE,readf);
-    if(readbuf[0] == 'I'){
+    line = strlen(readbuf);
+    if(readbuf[line-1]=='\n'){
       return;
     }
     printf("%s\n",readbuf);
@@ -77,7 +79,7 @@ void writedata(FILE *readf, int numtoread, char begin){
   FILE * currentwritefile = NULL, *configfile;
   int curcat = 0,curfile = 0;
   int i,pl_from,pl_namespace,scratch;
-  char sentenial = 0,written = 0,prevchar = 0;
+  char sentenial = 0,written = 0,prevchar = 0, prevprevchar = 0, prevbeforethat = 0;
   off_t tellnum;
 
   sprintf(filename,"link%d.txt",curcat);
@@ -213,6 +215,8 @@ void writedata(FILE *readf, int numtoread, char begin){
       while(!written){
 	if(!itr){//pl_title is cutoff
 	  prevchar = placeholder[strlen(placeholder) - 1]; //get last char in buffer
+	  prevprevchar = placeholder[strlen(placeholder) - 2]; //get second to last char
+	  prevbeforethat = placeholder[strlen(placeholder) - 3]; //third before that
 	  strcat(writebuf,placeholder);
 	  fgets(readbuf,READSIZE,readf);
 	  placeholder = readbuf;
@@ -220,8 +224,11 @@ void writedata(FILE *readf, int numtoread, char begin){
 	}
 	if(itr != readbuf){
 	  prevchar = *(itr-1);
+	  prevprevchar = *(itr-2);
+	  prevbeforethat = *(itr-3);
 	}
-	if(prevchar == '\\'){
+	if(prevchar == '\\' && (prevprevchar != '\\'
+				|| (prevprevchar == '\\' && prevbeforethat == '\\'))){
 	  ++itr;
 	  itr = strpbrk(itr,"\'");
 	}else{
