@@ -116,6 +116,12 @@ void writedata(FILE *readf, int numtoread, char begin){
 	    break;
 	  }
 	  itr = strpbrk(readbuf,"(");
+	  if(!itr){//we reached a new line
+	    sentenial = 1;
+	    tellnum = ftello(readf);
+	    fgets(readbuf,READSIZE,readf);
+	    break;	    
+	  }
 	}
 	*itr = '\0';
 	++itr;
