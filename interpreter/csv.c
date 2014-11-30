@@ -4,10 +4,9 @@
 #include <math.h>
 #include <limits.h>
 
-void writedata(FILE *readf, int numtoread);
+void writedata(FILE *readf, int numtoread,char begin);
 void movetocurpos(FILE *readf, FILE *config);
 void debugfun(FILE *readf);
-void getfirsti(FILE *readf);
 
 #define _FILE_OFFSET_BITS 64
 #define READSIZE 1000
@@ -19,7 +18,7 @@ void getfirsti(FILE *readf);
 int main(int argc, char ** argv){
   FILE *readf, *config;
   int numtoread;
-  char debug = 0;
+  char debug = 0,begin=1;
 
   if(argc < 3){
     printf("error: need 2 arguments. Name of source file,num of lines to read\n");
@@ -35,6 +34,7 @@ int main(int argc, char ** argv){
   }
   config = fopen(".linksconfig.txt","r");
   if(config){
+    begin = 0;
     printf("%s\n","starting from new position");
     movetocurpos(readf, config);
     if(debug){
@@ -47,7 +47,7 @@ int main(int argc, char ** argv){
   }
   numtoread = atoi(argv[2]);
 	
-  writedata(readf,numtoread);
+  writedata(readf,numtoread,begin);
   fclose(readf);
   exit(EXIT_SUCCESS);
 }
@@ -58,20 +58,6 @@ void movetocurpos(FILE *readf, FILE *config){
   fgets(readbuf,READSIZE,config);
   offset = atoll(readbuf);
   fseeko(readf,offset,SEEK_SET);
-}
-
-void getfirsti(FILE *readf){
-  off_t tellnum;
-  char readbuf[READSIZE];
-
-  tellnum = ftello(readf);  
-  fgets(readbuf,READSIZE,readf);
-  //ignore the first couple of lines that appear in the files
-  while(readbuf[0] != 'I'){
-    tellnum = ftello(readf);
-    fgets(readbuf,READSIZE,readf);
-  }
-  fseeko(readf,tellnum,SEEK_SET);
 }
 
 void debugfun(FILE *readf){
@@ -85,7 +71,7 @@ void debugfun(FILE *readf){
   }
 }
 
-void writedata(FILE *readf, int numtoread){
+void writedata(FILE *readf, int numtoread, char begin){
   char readbuf[READSIZE], writebuf[WRITESIZE], *itr, *placeholder;
   char filename[20];
   FILE * currentwritefile = NULL, *configfile;
@@ -96,14 +82,18 @@ void writedata(FILE *readf, int numtoread){
 
   sprintf(filename,"link%d.txt",curcat);
   currentwritefile = fopen(filename,"a");
-
-  fgets(readbuf,READSIZE,readf);
-  //ignore the first couple of lines that appear in the files
-  while(readbuf[0] != 'I'){
+  
+  if(begin){
     fgets(readbuf,READSIZE,readf);
+    //ignore the first couple of lines that appear in the files
+    while(readbuf[0] != 'I'){
+      fgets(readbuf,READSIZE,readf);
+    }
+  }else{
+    fgets(readbuf,READSIZE,readf);
+    printf("buffer:%s\n",readbuf);
   }
-
-
+  
   for(i = 0; i < numtoread; ++i){
     itr = NULL;
     placeholder = NULL;
@@ -117,6 +107,9 @@ void writedata(FILE *readf, int numtoread){
 	placeholder = itr;
 	itr = strpbrk(itr,"(");
 	if(!itr){//could not find (
+	  if(i == numtoread-1){
+	    tellnum = ftello(readf);
+	  }
 	  fgets(readbuf,READSIZE,readf);
 	  if(readbuf[0] == 'I'){
 	    sentenial = 1;
@@ -256,7 +249,6 @@ void writedata(FILE *readf, int numtoread){
   //fwrite("\n]}\n",sizeof(char),4,currentwritefile);
   close(currentwritefile);
   configfile = fopen(".linksconfig.txt","w");
-  tellnum = ftello(readf);
   sprintf(writebuf,"%jd",tellnum);
   fwrite(writebuf,sizeof(char),strlen(writebuf),configfile);
   close(configfile);
