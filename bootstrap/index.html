@@ -55,7 +55,7 @@ svg {
     
       
     
-      <button type="submit" class="btn btn-primary">Submit</button>
+      <button type="submit" class="col-sm-offest-6 btn btn-primary">Submit</button>
     </form>
 
     <script src="http://d3js.org/d3.v3.min.js"></script>
@@ -77,7 +77,7 @@ var svg = d3.select("body").append("svg")
     .attr("height", height)
     .attr("class", "col-sm-offset-2 col-sm-8");
 
-d3.json("miserables.json", function(error, graph) {
+d3.csv("link0.txt", function(error, graph) {
   force
       .nodes(graph.nodes)
       .links(graph.links)
