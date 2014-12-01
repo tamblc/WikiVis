@@ -104,6 +104,10 @@ void writedata(FILE *readf, int numtoread, char begin){
     while(!sentenial){
       if(!itr){//start of our line
 	itr = strpbrk(readbuf,"(");
+	if(!itr){
+	  printf("got to the end of file");
+	  return;
+	}
 	*itr = '\0';
 	++itr;
       }else{
