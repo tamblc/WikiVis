@@ -7,12 +7,13 @@
 void writedata(FILE *readf, int numtoread,char begin);
 void movetocurpos(FILE *readf, FILE *config);
 void debugfun(FILE *readf);
+int getnumdelimiting(char * ptr);
 
 #define _FILE_OFFSET_BITS 64
 #define READSIZE 1000
 #define	WRITESIZE 500
 #define PL_TITLE_MAX 255
-#define SEPERATOR 10000
+#define SEPERATOR 25000
 #define DEBUG
 
 int main(int argc, char ** argv){
@@ -78,8 +79,8 @@ void writedata(FILE *readf, int numtoread, char begin){
   char filename[20];
   FILE * currentwritefile = NULL, *configfile;
   int curcat = 0,curfile = 0;
-  int i,pl_from,pl_namespace,scratch;
-  char sentenial = 0,written = 0,prevchar = 0, prevprevchar = 0, prevbeforethat = 0;
+  int i,pl_from,pl_namespace,scratch,numdelimiting,tempnumdelimiting;
+  char sentenial = 0,written = 0;
   off_t tellnum;
 
   sprintf(filename,"link%d.txt",curcat);
@@ -212,25 +213,25 @@ void writedata(FILE *readf, int numtoread, char begin){
       placeholder = itr;	   //find next '
       itr = strpbrk(itr,"\'");
       written = 0;
+      numdelimiting = 0;
       while(!written){
 	if(!itr){//pl_title is cutoff
-	  prevchar = placeholder[strlen(placeholder) - 1]; //get last char in buffer
-	  prevprevchar = placeholder[strlen(placeholder) - 2]; //get second to last char
-	  prevbeforethat = placeholder[strlen(placeholder) - 3]; //third before that
+	  tempnumdelimiting = getnumdelimiting(&(placeholder[strlen(placeholder) -1]));
 	  strcat(writebuf,placeholder);
 	  fgets(readbuf,READSIZE,readf);
 	  placeholder = readbuf;
 	  itr = strpbrk(readbuf,"\'");
+	  numdelimiting += getnumdelimiting(itr - 1);
+	  if(numdelimiting == (itr-readbuf)){//case of where you have //...//and//..//'cutoff
+	    numdelimiting += tempnumdelimiting;
+      	  }
+	}else{
+	  numdelimiting = getnumdelimiting(itr - 1);
 	}
-	if(itr != readbuf){
-	  prevchar = *(itr-1);
-	  prevprevchar = *(itr-2);
-	  prevbeforethat = *(itr-3);
-	}
-	if(prevchar == '\\' && (prevprevchar != '\\'
-				|| (prevprevchar == '\\' && prevbeforethat == '\\'))){
+	if(numdelimiting%2 == 1){
 	  ++itr;
 	  itr = strpbrk(itr,"\'");
+	  numdelimiting = 0;
 	}else{
 	  *itr = '\0';
 	  ++itr;
@@ -265,4 +266,13 @@ void writedata(FILE *readf, int numtoread, char begin){
   sprintf(writebuf,"%jd",tellnum);
   fwrite(writebuf,sizeof(char),strlen(writebuf),configfile);
   close(configfile);
+}
+
+int getnumdelimiting(char * ptr){
+  int ans = 0;
+  while(*ptr == '\\'){
+    ++ans;
+    --ptr;
+  }
+  return ans;
 }
