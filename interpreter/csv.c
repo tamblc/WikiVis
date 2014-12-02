@@ -82,6 +82,8 @@ void writedata(FILE *readf, int numtoread, char begin){
   int i,pl_from,pl_namespace,scratch,numdelimiting,tempnumdelimiting;
   char sentenial = 0,written = 0;
   off_t tellnum;
+  long long int numarticles=0,numlinks=0,maxlink=0,tempmaxlink=0;
+  int maxlinknum;
 
   sprintf(filename,"link%d.txt",curcat);
   currentwritefile = fopen(filename,"a");
@@ -105,7 +107,9 @@ void writedata(FILE *readf, int numtoread, char begin){
       if(!itr){//start of our line
 	itr = strpbrk(readbuf,"(");
 	if(!itr){
-	  printf("got to the end of file");
+	  printf("got to the end of file\n");
+	  printf("numlines:%d numarticles:%lld numlinks:%lld maxlink:%lld id:%d\n",
+		 i,numarticles,numlinks,maxlink,maxlinknum);
 	  return;
 	}
 	*itr = '\0';
@@ -207,6 +211,12 @@ void writedata(FILE *readf, int numtoread, char begin){
 	  }*/
 	//sprintf(writebuf,"{\"%d\":[\n",pl_from);			
 	sprintf(writebuf,"%d,",pl_from);
+	++numarticles;
+	if(tempmaxlink > maxlink){
+	  maxlink = tempmaxlink;
+	  maxlinknum = pl_from;
+	}
+	tempmaxlink = 0;
 	curfile = pl_from;
       }else if(pl_from != 0){
 	//sprintf(writebuf,",\n");
@@ -254,6 +264,8 @@ void writedata(FILE *readf, int numtoread, char begin){
 	printf("error: %d %s\n", pl_namespace, placeholder);
 	continue;
       }
+      ++numlinks;
+      ++tempmaxlink;
       if(curcat != (pl_from/SEPERATOR)){
 	curcat = pl_from/SEPERATOR;
 	close(currentwritefile);
